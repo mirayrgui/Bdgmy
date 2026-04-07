@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initMonthContext();
     checkFirstLaunch();
+    setupWelcomeButton();
     updateUI();
     setupForms();
     setupSimulator();
@@ -38,19 +39,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkFirstLaunch() {
-    const hasLaunched = localStorage.getItem('eco_launched');
+    const hasLaunched = localStorage.getItem('firstLaunch');
     if (!hasLaunched) {
         document.getElementById('welcome-screen').classList.remove('hidden');
     }
 }
 
-window.startApp = () => {
-    localStorage.setItem('eco_launched', 'true');
-    document.getElementById('welcome-screen').classList.add('hidden');
+function setupWelcomeButton() {
+    const btn = document.getElementById('btn-start-app');
+    if (btn) {
+        // Support both click and touch for mobile responsiveness
+        ['click', 'touchstart'].forEach(evt => {
+            btn.addEventListener(evt, (e) => {
+                e.preventDefault();
+                startApp();
+            }, { passive: false });
+        });
+    }
+}
+
+function startApp() {
+    localStorage.setItem('firstLaunch', 'done');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    if (welcomeScreen) {
+        welcomeScreen.classList.add('hidden');
+        welcomeScreen.style.display = 'none'; // Force hide
+    }
+    
     // Redirect to Income tab
     const incomeBtn = document.querySelector('[data-tab="income"]');
     if (incomeBtn) incomeBtn.click();
-};
+}
 
 window.confirmReset = () => {
     if (confirm('Êtes-vous sûr ? Cette action est irréversible.')) {
@@ -74,7 +93,7 @@ function saveToStorage() {
     localStorage.setItem('eco_expenses', JSON.stringify(expenses));
     localStorage.setItem('eco_goals', JSON.stringify(goals));
     localStorage.setItem('eco_daily_entries', JSON.stringify(dailyEntries));
-    localStorage.setItem('eco_launched', 'true'); // Ensure welcome screen doesn't show after first save
+    localStorage.setItem('firstLaunch', 'done'); // Ensure welcome screen doesn't show after first save
 }
 
 function initMonthContext() {
