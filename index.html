@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoBudget - Gestion de Budget Personnel</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="welcome-screen" class="welcome-overlay hidden">
+        <div class="welcome-card card animate-slide-up">
+            <div class="welcome-icon">👋</div>
+            <h2>Bienvenue !</h2>
+            <p>Commencez par ajouter vos revenus, vos dépenses et vos objectifs d'épargne pour prendre le contrôle de vos finances.</p>
+            <button class="btn btn-primary btn-lg" onclick="startApp()">Commencer →</button>
+        </div>
+    </div>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <span class="logo-icon">💎</span>
+                <h1>EcoBudget</h1>
+            </div>
+            <div id="bonus-banner" class="bonus-banner hidden">
+                💰 Mois de prime ! +25 000 DA
+            </div>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <div class="container nav-links">
+            <button class="nav-btn active" data-tab="dashboard">
+                <span class="icon">📊</span>
+                <span class="text">Tableau de bord</span>
+            </button>
+            <button class="nav-btn" data-tab="income">
+                <span class="icon">💰</span>
+                <span class="text">Revenus</span>
+            </button>
+            <button class="nav-btn" data-tab="expenses">
+                <span class="icon">💸</span>
+                <span class="text">Budget & Dépenses</span>
+            </button>
+            <button class="nav-btn" data-tab="savings">
+                <span class="icon">🎯</span>
+                <span class="text">Épargne & Objectifs</span>
+            </button>
+            <button class="nav-btn" data-tab="daily">
+                <span class="icon">📝</span>
+                <span class="text">Saisie Quotidienne</span>
+            </button>
+            <button class="nav-btn" data-tab="history">
+                <span class="icon">📅</span>
+                <span class="text">Historique & Comparaison</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="container" id="main-content">
+        <!-- Dashboard Tab -->
+        <section id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <h3>Revenu du mois</h3>
+                    <p class="amount" id="dash-income">0 DA</p>
+                    <span class="label">Total sources actives</span>
+                </div>
+                <div class="card stat-card">
+                    <h3>Dépenses fixes</h3>
+                    <p class="amount text-danger" id="dash-expenses">0 DA</p>
+                    <span class="label">Total mensuel</span>
+                </div>
+                <div class="card stat-card">
+                    <h3>Reste disponible</h3>
+                    <p class="amount" id="dash-available">0 DA</p>
+                    <span class="label" id="dash-available-label">Solde net</span>
+                </div>
+                <div class="card stat-card">
+                    <h3>Épargne totale</h3>
+                    <p class="amount text-purple" id="dash-savings">0 DA</p>
+                    <div class="health-badge" id="health-badge">Santé : --</div>
+                </div>
+            </div>
+
+            <div class="dashboard-layout">
+                <div class="dashboard-main">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3>Évolution (6 derniers mois)</h3>
+                        </div>
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Objectifs d'épargne</h3>
+                        </div>
+                        <div id="dash-goals-list" class="goals-progress-list">
+                            <!-- Dynamic list -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-side">
+                    <div class="card prime-countdown-card">
+                        <h3>Prochaine prime</h3>
+                        <div id="prime-countdown" class="countdown-value">-- mois</div>
+                        <p class="text-secondary">Prévue en <span id="prime-month-name">--</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Income Tab -->
+        <section id="income" class="tab-content">
+            <div class="section-header">
+                <h2>Mes sources de revenus</h2>
+                <button class="btn btn-primary" onclick="openModal('incomeModal')">+ Ajouter une source</button>
+            </div>
+            
+            <div class="card list-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Montant</th>
+                                <th>Fréquence</th>
+                                <th>Mensuel</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="income-list">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="income-analysis-grid">
+                <div class="card">
+                    <h3>Répartition des revenus</h3>
+                    <canvas id="incomePieChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Projection sur 12 mois</h3>
+                    <canvas id="incomeBarChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expenses Tab -->
+        <section id="expenses" class="tab-content">
+            <div class="section-header">
+                <h2>Mes catégories de dépenses</h2>
+                <button class="btn btn-primary" onclick="openModal('expenseModal')">+ Ajouter une catégorie</button>
+            </div>
+
+            <div class="card list-card">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Catégorie</th>
+                                <th>Montant</th>
+                                <th>% Revenu</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-list">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="analysis-summary">
+                <div class="card rule-card">
+                    <h3>Règle 50/30/20</h3>
+                    <div class="rule-visual">
+                        <div class="rule-bar">
+                            <div id="rule-needs" class="bar needs" style="width: 0%">Besoins</div>
+                            <div id="rule-wants" class="bar wants" style="width: 0%">Envies</div>
+                            <div id="rule-savings" class="bar savings" style="width: 0%">Épargne</div>
+                        </div>
+                        <div id="rule-status" class="rule-status">Analyse en cours...</div>
+                    </div>
+                </div>
+                <div class="card balance-card">
+                    <h3>Reste à vivre</h3>
+                    <div id="remaining-life" class="huge-amount">0 DA</div>
+                    <p class="text-secondary">Après toutes les charges fixes</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Analyse du budget</h3>
+                <div class="chart-container-large">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Savings Tab -->
+        <section id="savings" class="tab-content">
+            <div class="section-header">
+                <h2>Mes objectifs d'épargne</h2>
+                <button class="btn btn-primary" onclick="openModal('savingsModal')">+ Ajouter un objectif</button>
+            </div>
+
+            <div id="savings-goals-grid" class="goals-grid">
+                <!-- Dynamic cards -->
+            </div>
+
+            <div class="card simulator-card">
+                <div class="card-header">
+                    <h3>Simulateur d'allocation mensuelle</h3>
+                </div>
+                <div class="simulator-content">
+                    <div class="simulator-main">
+                        <div class="form-group">
+                            <label>Montant total à allouer ce mois (DA)</label>
+                            <input type="range" id="total-savings-slider" min="0" max="100000" step="500" value="0">
+                            <div class="slider-value"><span id="total-savings-value">0</span> DA</div>
+                        </div>
+                        <div id="allocation-sliders" class="allocation-list">
+                            <!-- Dynamic sliders -->
+                        </div>
+                    </div>
+                    <div class="simulator-stats">
+                        <div class="mini-stat">
+                            <span class="label">Taux d'épargne</span>
+                            <span class="value" id="savings-rate">0%</span>
+                        </div>
+                        <div class="mini-stat">
+                            <span class="label">Patrimoine (1 an)</span>
+                            <span class="value" id="wealth-1y">0 DA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Daily Entry Tab -->
+        <section id="daily" class="tab-content">
+            <div id="month-context-banner" class="month-banner">
+                <div class="banner-info">
+                    <span class="icon">📅</span>
+                    <span id="current-view-month-label">Saisie pour : Avril 2026</span>
+                </div>
+                <div class="banner-actions">
+                    <input type="month" id="month-picker" class="hidden">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleMonthPicker()">Changer de mois</button>
+                    <button id="btn-reset-month" class="btn btn-primary btn-sm hidden" onclick="resetToCurrentMonth()">Revenir au mois actuel</button>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <h2>📝 Saisie Quotidienne</h2>
+                <div id="save-status" class="status-message hidden">✅ Enregistré !</div>
+            </div>
+
+            <div class="daily-layout">
+                <div class="daily-form-side">
+                    <div class="card">
+                        <h3>Nouvelle opération</h3>
+                        <form id="dailyForm">
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="daily-date" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Type d'opération</label>
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="daily-type" value="expense" checked>
+                                        <span class="radio-custom">💸 Dépense</span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="daily-type" value="saving">
+                                        <span class="radio-custom">💰 Épargne</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Montant (DA)</label>
+                                    <input type="number" id="daily-amount" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Catégorie</label>
+                                    <div class="category-select-wrapper">
+                                        <input type="text" id="daily-category" list="category-list" placeholder="Rechercher ou créer..." required>
+                                        <datalist id="category-list">
+                                            <!-- Grouped categories will be injected here -->
+                                        </datalist>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Description (optionnel)</label>
+                                <input type="text" id="daily-desc" placeholder="ex: Courses Carrefour">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-full">Enregistrer l'opération</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Résumé du mois</h3>
+                            <div class="toggle-group">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="toggle-fixed-expenses" checked>
+                                    <span class="switch-text">Inclure les fixes</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="weekly-summary">
+                            <canvas id="weeklyChart"></canvas>
+                            <div id="weekly-alert" class="alert-box hidden">
+                                ⚠️ Budget dépassé pour : <span id="alert-cat"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="daily-history-side">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Historique du mois</h3>
+                            <div class="filter-group">
+                                <select id="filter-type-daily" class="filter-select">
+                                    <option value="all">Tout</option>
+                                    <option value="fixed">Dépenses fixes 🔒</option>
+                                    <option value="manual">Saisies manuelles</option>
+                                    <option value="saving">Épargne</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Catégorie</th>
+                                        <th>Montant</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="daily-history-list">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card comparison-card">
+                        <h3>Budget vs Réel</h3>
+                        <div id="monthly-comparison-stats" class="comparison-grid">
+                            <!-- Dynamic stats -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- History & Comparison Tab -->
+        <section id="history" class="tab-content">
+            <div class="history-controls card">
+                <div class="month-nav">
+                    <button class="btn btn-icon" onclick="changeHistoryMonth(-1)">←</button>
+                    <div class="month-selector-wrapper">
+                        <span id="history-month-label" class="current-month-display">Avril 2026</span>
+                        <select id="history-month-select" class="month-dropdown">
+                            <!-- Dynamic months -->
+                        </select>
+                    </div>
+                    <button class="btn btn-icon" onclick="changeHistoryMonth(1)">→</button>
+                </div>
+                <div class="history-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="resetHistoryToCurrent()">Mois actuel</button>
+                    <button class="btn btn-primary btn-sm" onclick="exportCurrentMonthCSV()">📥 Export CSV</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <h3>Revenus</h3>
+                    <p class="amount text-primary" id="hist-income">0 DA</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Dépenses</h3>
+                    <p class="amount text-danger" id="hist-expenses">0 DA</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Épargne Réelle</h3>
+                    <p class="amount text-success" id="hist-savings">0 DA</p>
+                </div>
+                <div class="card stat-card">
+                    <h3>Solde Final</h3>
+                    <p class="amount" id="hist-balance">0 DA</p>
+                </div>
+            </div>
+
+            <div class="history-layout">
+                <div class="history-main">
+                    <div class="card chart-card">
+                        <h3>Répartition des dépenses</h3>
+                        <canvas id="historyPieChart"></canvas>
+                    </div>
+                    <div class="card chart-card">
+                        <h3>Budget prévu vs Réel</h3>
+                        <canvas id="historyBarChart"></canvas>
+                    </div>
+                </div>
+                <div class="history-side">
+                    <div class="card">
+                        <h3>Statistiques du mois</h3>
+                        <div class="mini-stat-list">
+                            <div class="mini-stat">
+                                <span class="label">Taux d'épargne</span>
+                                <span class="value" id="hist-savings-rate">0%</span>
+                            </div>
+                            <div class="mini-stat">
+                                <span class="label">Meilleure catégorie</span>
+                                <span class="value" id="hist-best-cat">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Exportation globale</h3>
+                        <button class="btn btn-secondary w-full" onclick="exportFullHistoryCSV()">📥 Exporter tout l'historique</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card comparison-dashboard">
+                <div class="card-header">
+                    <h3>Comparaison Multi-Mois</h3>
+                    <div class="multi-select-wrapper">
+                        <label>Comparer avec :</label>
+                        <div id="compare-months-chips" class="chips-container">
+                            <!-- Dynamic chips -->
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-charts">
+                    <div class="card chart-card">
+                        <h3>Évolution sur 12 mois</h3>
+                        <canvas id="evolution12mChart"></canvas>
+                    </div>
+                    <div class="card chart-card">
+                        <h3>Comparaison groupée</h3>
+                        <canvas id="comparisonGroupedChart"></canvas>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="comparison-table">
+                        <!-- Dynamic comparison table -->
+                    </table>
+                </div>
+            </div>
+
+            <div class="card heatmap-section">
+                <h3>Intensité de l'épargne (Heatmap)</h3>
+                <div id="savings-heatmap" class="heatmap-container">
+                    <!-- Dynamic heatmap -->
+                </div>
+                <div class="heatmap-legend">
+                    <span>Moins</span>
+                    <div class="legend-scale">
+                        <div class="scale-box" style="background: #ebedf0"></div>
+                        <div class="scale-box" style="background: #c6e48b"></div>
+                        <div class="scale-box" style="background: #7bc96f"></div>
+                        <div class="scale-box" style="background: #239a3b"></div>
+                        <div class="scale-box" style="background: #196127"></div>
+                    </div>
+                    <span>Plus</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <button class="btn btn-danger btn-sm" onclick="confirmReset()">🗑️ Réinitialiser toutes les données</button>
+    </footer>
+
+    <!-- Modals -->
+    <div id="incomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="incomeModalTitle">Ajouter une source de revenu</h2>
+                <span class="close" onclick="closeModal('incomeModal')">&times;</span>
+            </div>
+            <form id="incomeForm">
+                <input type="hidden" id="income-id">
+                <div class="form-group">
+                    <label>Nom de la source</label>
+                    <input type="text" id="income-name" placeholder="ex: Freelance" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Montant (DA)</label>
+                        <input type="number" id="income-amount" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Fréquence</label>
+                        <select id="income-frequency">
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly" selected>Mensuel</option>
+                            <option value="quarterly">Trimestriel</option>
+                            <option value="semiannual">Semestriel</option>
+                            <option value="annual">Annuel</option>
+                            <option value="unique">Unique</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <select id="income-icon">
+                            <option value="💼">💼 Travail</option>
+                            <option value="💰">💰 Argent</option>
+                            <option value="🏦">🏦 Banque</option>
+                            <option value="📦">📦 Vente</option>
+                            <option value="🖥️">🖥️ Freelance</option>
+                            <option value="🎓">🎓 Bourse</option>
+                            <option value="📈">📈 Investissement</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur</label>
+                        <input type="color" id="income-color" value="#3498db">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('incomeModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="expenseModalTitle">Ajouter une catégorie de dépense</h2>
+                <span class="close" onclick="closeModal('expenseModal')">&times;</span>
+            </div>
+            <form id="expenseForm">
+                <input type="hidden" id="expense-id">
+                <div class="form-group">
+                    <label>Nom de la catégorie</label>
+                    <input type="text" id="expense-name" placeholder="ex: Électricité" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Montant mensuel (DA)</label>
+                        <input type="number" id="expense-amount" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="expense-type">
+                            <option value="fixed">Fixe (Besoin)</option>
+                            <option value="variable">Variable (Envie)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <select id="expense-icon">
+                            <option value="🛒">🛒 Courses</option>
+                            <option value="🏠">🏠 Logement</option>
+                            <option value="🚌">🚌 Transport</option>
+                            <option value="📱">📱 Téléphone</option>
+                            <option value="🍔">🍔 Resto</option>
+                            <option value="⚡">⚡ Énergie</option>
+                            <option value="💊">💊 Santé</option>
+                            <option value="🎮">🎮 Loisirs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur</label>
+                        <input type="color" id="expense-color" value="#e74c3c">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('expenseModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="savingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="savingsModalTitle">Ajouter un objectif d'épargne</h2>
+                <span class="close" onclick="closeModal('savingsModal')">&times;</span>
+            </div>
+            <form id="savingsForm">
+                <input type="hidden" id="savings-id">
+                <div class="form-group">
+                    <label>Nom de l'objectif</label>
+                    <input type="text" id="savings-name" placeholder="ex: Voyage" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Montant cible (DA)</label>
+                        <input type="number" id="savings-target" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Déjà épargné (DA)</label>
+                        <input type="number" id="savings-current" min="0" value="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Allocation mensuelle (DA)</label>
+                        <input type="number" id="savings-monthly" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorité</label>
+                        <select id="savings-priority">
+                            <option value="1">1 (Haute)</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5 (Basse)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Icône</label>
+                        <select id="savings-icon">
+                            <option value="🏠">🏠 Logement</option>
+                            <option value="🚗">🚗 Véhicule</option>
+                            <option value="✈️">✈️ Voyage</option>
+                            <option value="💍">💍 Mariage</option>
+                            <option value="🎓">🎓 Études</option>
+                            <option value="🏥">🏥 Urgence</option>
+                            <option value="💻">💻 Tech</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Couleur</label>
+                        <input type="color" id="savings-color" value="#9b59b6">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('savingsModal')">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
